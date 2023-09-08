@@ -14,4 +14,18 @@
         dns_hostnames: true
         tenancy: default
         state: "{{state}}"
-      register: vpcout    
+      register: vpcout
+
+    - debug:
+        var: vpcout  
+
+    - name: Create VPC subnets
+      ec2_vpc_subnet:
+        vpc_id: "{{vpcout.vpc.id}}"
+        region: "{{region}}"
+        az: "{{zone1}}"
+        cidr: "{{PubSub1Cidr}}"
+        state: "{{state}}"
+        tags:
+          Name: ecommerce-pubsub1
+      register: pubsub1_out
