@@ -1,0 +1,3 @@
+bastion_ami: 
+region: eu-west-3
+MYIP: 77.206.200.232  
