@@ -1,0 +1,59 @@
+---
+- name: Setup ecommerce Bastion hosts
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Import bastion vars
+      include_vars: vars/bastion.yml
+
+    - name: Import VPC setup vars
+      include_vars: vars/output_vars
+
+    - name: Create ecommerce ec2 key
+      ec2_key:
+        name: ecommerce-key
+        region: "{{region}}"
+      register: key_out
+      
+    - name: Save private key into file bastion-key.pem
+      copy:
+        content: "{{key_out.key.private_key}}"
+        dest: "./bastion-key.pem"
+        mode: 0600
+      when: key_out.changed
+      
+
+    - name: Create security group for bastion host
+      ec2_group:
+        name: Bastion-host-SG
+        description: Allow port 22 from everywhere
+        region: "{{region}}"
+        vpc_id: "{{vpcid}}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: "{{MYIP}}"
+        register: bastion-sg-out
+    
+    - name: Creating Bastion host
+      ec2:
+        key_name: ecommerce-key
+        region: "{{region}}"
+        instance_type: t2.micro
+        image: "{{bastion_ami}}"
+        wait: yes
+        wait_timeout: 300
+        tags:
+          Name: Bastion_host
+          Project: Ecommerce 
+          Owner: Devops Team
+        exactly_count: 1
+        count_tag:
+          Name: Bastion_host
+          Project: Ecommerce 
+          Owner: Devops Team
+        group_id: "{{bastion-sg-out.group_id}}" 
+      register: bastion_out
+
