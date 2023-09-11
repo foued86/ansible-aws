@@ -38,23 +38,18 @@
       register: bastion_sg_out
     
     - name: Creating Bastion host
-      ec2:
+      ec2_instance:
         key_name: ecommerce-key
         region: "{{region}}"
         instance_type: t2.micro
-        image: "{{bastion_ami}}"
+        image_id: "{{bastion_ami}}"
         wait: true
         wait_timeout: 300
         tags:
           Name: Bastion_host
           Project: Ecommerce 
           Owner: Devops Team
-        exactly_count: 1
-        count_tag:
-          Name: "Bastion_host"
-          Project: Ecommerce 
-          Owner: Devops Team
-        group_id: "{{bastion_sg_out.group_id}}"
+        security_group: "{{bastion_sg_out.group_id}}"
         vpc_subnet_id: "{{pubsub1id}}"
       register: bastion_out
 
