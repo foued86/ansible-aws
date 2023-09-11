@@ -110,4 +110,28 @@
         routes:
           - dest: 0.0.0.0/0
             gateway_id: "{{igw_out.gateway_id}}"
-      register: public_RT_out      
+      register: public_RT_out
+
+    - name: Create new nat gateway and allocate new EIP if a nat gateway does not yet exist in the subnet.
+      ec2_vpc_nat_gateway:
+        state: "{{state}}"
+        subnet_id: "{{ pubsub1_out.subnet.id }}"
+        wait: true
+        region: "{{region}}"
+        if_exist_do_not_create: true
+      register: nat_gateway_out
+
+    - name: Set up private subnet route table
+      ec2_vpc_route_table:
+        vpc_id: "{{vpcout.vpc.id}}"
+        region: "{{region}}"
+        tags:
+          Name: ecommerce_priv_RT
+        subnets:
+          - "{{ privsub1_out.subnet.id }}"
+          - "{{ privsub2_out.subnet.id }}"
+          - "{{ privsub3_out.subnet.id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{nat_gateway_out.nat_gateway_id}}"
+      register: private_RT_out        
