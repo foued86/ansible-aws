@@ -42,7 +42,7 @@
     - name: Create security group for Ecommerce stack
       ec2_group:
         name: ecommerce-ec2-SG
-        description: Allow port 22 from bastion and port 80 from elb
+        description: Allow port 22 from bastion,  port 80 from elb and within the same SG
         region: "{{region}}"
         vpc_id: "{{vpcid}}"
         purge_rules: false # make rules idempotent
@@ -56,18 +56,10 @@
             from_port: 22
             to_port: 22
             group_id: "{{BastionSGid}}"
-      register: ecommerce_stack_sg_out
 
-    - name: Update SG with its own sg id
-      ec2_group:
-        name: ecommerce-ec2-SG
-        description: Allow all traffic within the same SG
-        region: "{{region}}"
-        vpc_id: "{{vpcid}}"
-        purge_rules: false # make rules idempotent
-        rules:
           - proto: all
-            group_id: "{{ecommerce_stack_sg_out.group_id}}"
+            group_name: ecommerce-ec2-SG 
+      register: ecommerce_stack_sg_out
 
     - name: Creating Nginx Web01
       ec2_instance:
@@ -136,3 +128,7 @@
         security_group: "{{ecommerce_stack_sg_out.group_id}}"
         vpc_subnet_id: "{{privsub1id}}"
       register: db01_out
+
+    - debug:
+        var: db01_out
+
