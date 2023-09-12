@@ -24,4 +24,47 @@
         content: "{{ecommerce_key_out.key.private_key}}"
         dest: "./ecommerce_login_key.pem"
         mode: 0600
-      when: ecommerce_key_out.changed  
+      when: ecommerce_key_out.changed
+
+    - name: Create security group for Load Balancer
+      ec2_group:
+        name: ecommerce-elb-SG
+        description: Allow port 80 from everywhere and all ports in SG
+        region: "{{region}}"
+        vpc_id: "{{vpcid}}"
+        rules:
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+      register: ecommerce_elb_out
+
+    - name: Create security group for Ecommerce stack
+      ec2_group:
+        name: ecommerce-ec2-SG
+        description: Allow port 22 from bastion and port 80 from elb
+        region: "{{region}}"
+        vpc_id: "{{vpcid}}"
+        purge_rules: false # make rules idempotent
+        rules:
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            group_id: "{{ecommerce_elb_out.group_id}}"
+
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            group_id: "{{BastionSGid}}"
+      register: ecommerce_stack_sg_out
+
+    - name: Update SG with its own sg id
+      ec2_group:
+        name: ecommerce-ec2-SG
+        description: Allow all traffic within the same SG
+        region: "{{region}}"
+        vpc_id: "{{vpcid}}"
+        purge_rules: false # make rules idempotent
+        rules:
+          - proto: all
+            group_id: "{{ecommerce_stack_sg_out.group_id}}"
