@@ -1,0 +1,27 @@
+---
+- name: Setup Ecommerce Stack
+  hosts: localhost
+  connection: localhost
+  gather_facts: false
+  tasks:
+    - name: Import VPC output vars
+      include_vars: vars/vpc_output_vars
+
+    - name: Import VPC setup vars
+      include_vars: vars/vpc  
+
+    - name: Import Ecommerce setup vars
+      include_vars: vars/ecommerce-stack-setup
+
+    - name: Create ecommerce ec2 key
+      ec2_key:
+        name: ecommerce-key
+        region: "{{region}}"
+      register: ecommerce_key_out
+
+    - name: Save private key into fi le ecommerce-login-key.pem
+      copy:
+        content: "{{ecommerce_key_out.key.private_key}}"
+        dest: "./ecommerce-login-key.pem"
+        mode: 0600
+      when: ecommerce-login-key.changed  

@@ -8,7 +8,7 @@
       include_vars: vars/vpc.yml
 
     - name: Import VPC setup vars
-      include_vars: vars/output_vars
+      include_vars: vars/vpc_output_vars
 
     - name: Create ecommerce ec2 key
       ec2_key:
