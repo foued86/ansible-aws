@@ -70,13 +70,30 @@
         wait: true
         wait_timeout: 300
         tags:
-          Name: "Web01"
+          Name: "web01"
           Project: Ecommerce 
           Owner: Devops Team
         exact_count: 1  
         security_group: "{{ecommerce_stack_sg_out.group_id}}"
         vpc_subnet_id: "{{privsub1id}}"
       register: web01_out
+
+    - name: Creating tomcat app01
+      ec2_instance:
+        key_name: ecommerce-key
+        region: "{{region}}"
+        instance_type: t2.micro
+        image_id: "{{tomcat_ami}}"
+        wait: true
+        wait_timeout: 300
+        tags:
+          Name: "app01"
+          Project: Ecommerce 
+          Owner: Devops Team
+        exact_count: 1  
+        security_group: "{{ecommerce_stack_sg_out.group_id}}"
+        vpc_subnet_id: "{{privsub1id}}"
+      register: app01_out
     
     - name: Creating memcached mc01
       ec2_instance:
@@ -129,6 +146,82 @@
         vpc_subnet_id: "{{privsub1id}}"
       register: db01_out
 
-    - debug:
-        var: db01_out
+    #- debug:
+        #var: db01_out.instances[0].instance_id
+
+    - name: Creating classic LB
+      local_action:
+        module: elb_classic_lb
+        name: "ecommerce-elb"
+        region: "{{region}}"
+        state: present
+        instance_ids: 
+          - "{{web01_out.instances[0].instance_id}}"
+        purge_instance_ids: true
+        security_group_ids: "{{ecommerce_elb_out.group_id}}"
+        subnets:
+          - "{{pubsub1id}}"
+          - "{{pubsub2id}}"
+          - "{{pubsub3id}}"
+        listeners:
+          - protocol: http
+            load_balancer_port: 80
+            instance_port: 80 
+
+    - name: Insert/update Hosts IP & Name in file provision-stack/group_vars/hostip
+      blockinfile:
+        path: provision-stack/group_vars/hostip
+        block:
+          web01_ip: "{{web01_out.instances[0].private_ip_address}}" 
+          app01_ip: "{{app01_out.instances[0].private_ip_address}}"
+          rmq01_ip: "{{rmq01_out.instances[0].private_ip_address}}" 
+          mc01_ip: "{{mc01_out.instances[0].private_ip_address}}"    
+          db01_ip: "{{db01_out.instances[0].private_ip_address}}"
+
+    - name: Copy login key to provision-stack directory
+      copy:
+        src: bastion-key.pem
+        dest: provision-stack/bastion-key.pem
+        mode: '0400'
+
+    - name: Insert/update Inventory file provision-stack/inventory-ecommerce
+      blockinfile:
+        path: provision-stack/inventory-ecommerce
+        block:
+          web01 ansible_host={{web01_out.instances[0].private_ip_address}}
+          app01 ansible_host={{app01_out.instances[0].private_ip_address}}
+          rmq01 ansible_host={{rmq01_out.instances[0].private_ip_address}} 
+          mc01 ansible_host={{mc01_out.instances[0].private_ip_address}}    
+          db01 ansible_host={{db01_out.instances[0].private_ip_address}}
+          ctrl ansible_host=127.0.0.1 ansible_connection=local
+
+          [websrvgrp]
+          web01
+
+          [appsrvgrp]
+          app01
+
+          [rmqsrvgrp]
+          rmq01
+
+          [mcsrvgrp]
+          mc01
+
+          [dbsrvgrp]
+          db01
+
+          [control]
+          ctrl
+
+          [stack_inst:children]
+          websrvgrp
+          appsrvgrp
+          rmqsrvgrp
+          mcsrvgrp
+          dbsrvgrp
+
+          [stack_inst:vars]
+          ansible_user=ubuntu
+          ansible_ssh_private_key_file=bastion-key.pem    
+            
 
