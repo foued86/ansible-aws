@@ -4,8 +4,8 @@
   connection: local
   gather_facts: false
   tasks:
-    - name: Import bastion vars
-      include_vars: vars/bastion.yml
+    - name: Import VPC vars
+      include_vars: vars/vpc.yml
 
     - name: Import VPC setup vars
       include_vars: vars/output_vars
