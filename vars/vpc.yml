@@ -21,3 +21,7 @@ zone2: eu-west-3b
 zone3: eu-west-3c
 
 state: present
+
+# Bastion host vars
+bastion_ami: ami-02bbe13b2401b91f9
+MYIP: 77.206.200.232/32
