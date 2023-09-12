@@ -19,9 +19,9 @@
         region: "{{region}}"
       register: ecommerce_key_out
 
-    - name: Save private key into fi le ecommerce-login-key.pem
+    - name: Save private key intofi le ecommerce-login-key.pem
       copy:
         content: "{{ecommerce_key_out.key.private_key}}"
-        dest: "./ecommerce-login-key.pem"
+        dest: "./ecommerce_login_key.pem"
         mode: 0600
-      when: ecommerce-login-key.changed  
+      when: ecommerce_key_out.changed  
