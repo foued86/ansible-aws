@@ -68,3 +68,71 @@
         rules:
           - proto: all
             group_id: "{{ecommerce_stack_sg_out.group_id}}"
+
+    - name: Creating Nginx Web01
+      ec2_instance:
+        key_name: ecommerce-key
+        region: "{{region}}"
+        instance_type: t2.micro
+        image_id: "{{ngnix_ami}}"
+        wait: true
+        wait_timeout: 300
+        tags:
+          Name: "Web01"
+          Project: Ecommerce 
+          Owner: Devops Team
+        exact_count: 1  
+        security_group: "{{ecommerce_stack_sg_out.group_id}}"
+        vpc_subnet_id: "{{privsub1id}}"
+      register: web01_out
+    
+    - name: Creating memcached mc01
+      ec2_instance:
+        key_name: ecommerce-key
+        region: "{{region}}"
+        instance_type: t2.micro
+        image_id: "{{memcache_ami}}"
+        wait: true
+        wait_timeout: 300
+        tags:
+          Name: "mc01"
+          Project: Ecommerce 
+          Owner: Devops Team
+        exact_count: 1  
+        security_group: "{{ecommerce_stack_sg_out.group_id}}"
+        vpc_subnet_id: "{{privsub1id}}"
+      register: mc01_out
+
+    - name: Creating rabbitmq rmq01
+      ec2_instance:
+        key_name: ecommerce-key
+        region: "{{region}}"
+        instance_type: t2.micro
+        image_id: "{{rmq_ami}}"
+        wait: true
+        wait_timeout: 300
+        tags:
+          Name: "rmq01"
+          Project: Ecommerce 
+          Owner: Devops Team
+        exact_count: 1  
+        security_group: "{{ecommerce_stack_sg_out.group_id}}"
+        vpc_subnet_id: "{{privsub1id}}"
+      register: rmq01_out
+
+    - name: Creating Mysql db01
+      ec2_instance:
+        key_name: ecommerce-key
+        region: "{{region}}"
+        instance_type: t2.micro
+        image_id: "{{mysql_ami}}"
+        wait: true
+        wait_timeout: 300
+        tags:
+          Name: "db01"
+          Project: Ecommerce 
+          Owner: Devops Team
+        exact_count: 1  
+        security_group: "{{ecommerce_stack_sg_out.group_id}}"
+        vpc_subnet_id: "{{privsub1id}}"
+      register: db01_out
